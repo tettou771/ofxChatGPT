@@ -32,8 +32,8 @@ std::string ofxChatGPT::chatWithHistory(const string &message) {
     requestBody["model"] = modelName;
 
     // Add the new message to the history
-    messages.push_back({{"role", "user"}, {"content", message}});
-    requestBody["messages"] = messages;
+    conversation.push_back({{"role", "user"}, {"content", message}});
+    requestBody["messages"] = conversation;
     requestBody["temperature"] = 0.5;
 
     ofLogVerbose("ofxChatGPT") << "SendData: " << requestBody.dump();
@@ -45,7 +45,7 @@ std::string ofxChatGPT::chatWithHistory(const string &message) {
         string assistantReply = result["choices"][0]["message"]["content"].get<std::string>();
 
         // Add the assistant's reply to the history
-        messages.push_back({{"role", "assistant"}, {"content", assistantReply}});
+        conversation.push_back({{"role", "assistant"}, {"content", assistantReply}});
 
         ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
         return assistantReply;
@@ -85,6 +85,10 @@ vector<string> ofxChatGPT::getModelList() {
         ofLogError("ofxChatGPT") << "Data: " << response.data;
         return {};
     }
+}
+
+vector<ofJson> ofxChatGPT::getConversation() {
+    return conversation;
 }
 
 ofHttpResponse ofxChatGPT::sendRequest(const std::string &url, const std::string &body) {
