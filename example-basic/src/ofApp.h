@@ -10,5 +10,6 @@ public:
     void draw();
 
     ofxChatGPT chatGPT;
+    string userMessage, assistantMessage;
 };
 

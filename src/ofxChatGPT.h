@@ -4,13 +4,15 @@
 
 class ofxChatGPT {
 public:
-    void setup(const std::string &apiKey);
-    std::string chat(const std::string &prompt);
-    std::string chatWithHistory(const std::string &message);
+    void setup(string apiKey);
+    string chat(const string &message);
+    string chatWithHistory(const string &message);
+    void setModel(const string model);
+    vector<string> getModelList();
 
 private:
-    std::string apiKey;
-    std::vector<std::string> conversation;
+    string apiKey;
+    string modelName;
+    vector<ofJson> messages;
     ofHttpResponse sendRequest(const std::string &url, const std::string &body);
 };
-
