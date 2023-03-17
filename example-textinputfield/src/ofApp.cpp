@@ -5,24 +5,27 @@ void ofApp::setup() {
 
     inputField.setup();
     inputField.bounds = ofRectangle(20, 20, ofGetWidth() - 40, 30);
-    inputField.text = "ここに質問やお話の内容を入力してね";
+    inputField.text = "Input field";
 }
 
 void ofApp::update() {
 }
 
 void ofApp::draw() {
-    ofBackground(0);
-    ofSetColor(255);
+    ofBackground(50);
     
-    inputField.draw();  // 追加
+    ofSetColor(0);
+    ofDrawRectangle(inputField.bounds);
+    ofSetColor(255);
+    inputField.draw();
 
     // 会話履歴を画面に表示する
-    int yPos = 70;
-    for (const auto &message : chatGPT.conversation) {
-        ofDrawBitmapString(message, 20, yPos);
-        yPos += 20;
+    // 会話履歴を画面に表示する
+    stringstream conversationText;
+    for (const ofJson &message : chatGPT.getConversation()) {
+        conversationText << message["role"] << ": " << message["content"] << "\n";
     }
+    ofDrawBitmapString("conversation:\n" + conversationText.str(), 20, 70);
 }
 
 void ofApp::keyPressed(int key) {  // 追加
