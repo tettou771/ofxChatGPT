@@ -2,10 +2,11 @@
 
 void ofxChatGPT::setup(string apiKey) {
     this->apiKey = apiKey;
-    modelName = "gpt-3.5-turbo"; // default
+    modelName = "gpt-3.5-turbo"; // default model
 }
 
-std::string ofxChatGPT::chat(const string &message) {
+// Send a message to ChatGPT and get a response without conversation history.
+tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chat(const string &message) {
     std::string url = "https://api.openai.com/v1/chat/completions";
     ofJson requestBody;
     requestBody["model"] = modelName;
@@ -15,18 +16,21 @@ std::string ofxChatGPT::chat(const string &message) {
 
     ofHttpResponse response = sendRequest(url, requestBody.dump());
 
+    // Handle the response from ChatGPT.
     if (response.status == 200) {
         ofJson result = ofJson::parse(response.data.getText());
         ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
-        return result["choices"][0]["message"]["content"].get<std::string>();
+        return make_tuple(result["choices"][0]["message"]["content"].get<std::string>(), Success);
     } else {
-        ofLogError("ofxChatGPT") << "Error: " << response.status;
-        ofLogError("ofxChatGPT") << "Data: " << response.data;
-        return "";
+        auto errorCode = parseErrorResponse(response);
+        ofLogError("ofxChatGPT") << getErrorMessage(errorCode);
+        ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
+        return make_tuple("", errorCode);
     }
 }
 
-std::string ofxChatGPT::chatWithHistory(const string &message) {
+// Send a message to ChatGPT and get a response with conversation history.
+tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chatWithHistory(const string &message) {
     std::string url = "https://api.openai.com/v1/chat/completions";
     ofJson requestBody;
     requestBody["model"] = modelName;
@@ -40,6 +44,7 @@ std::string ofxChatGPT::chatWithHistory(const string &message) {
 
     ofHttpResponse response = sendRequest(url, requestBody.dump());
 
+    // Handle the response from ChatGPT.
     if (response.status == 200) {
         ofJson result = ofJson::parse(response.data.getText());
         string assistantReply = result["choices"][0]["message"]["content"].get<std::string>();
@@ -48,19 +53,22 @@ std::string ofxChatGPT::chatWithHistory(const string &message) {
         conversation.push_back({{"role", "assistant"}, {"content", assistantReply}});
 
         ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
-        return assistantReply;
+        return make_tuple(assistantReply, Success);
     } else {
-        ofLogError("ofxChatGPT") << "Error: " << response.status;
-        ofLogError("ofxChatGPT") << "Data: " << response.data;
-        return "";
+        auto errorCode = parseErrorResponse(response);
+        ofLogError("ofxChatGPT") << getErrorMessage(errorCode);
+        ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
+        return make_tuple("", errorCode);
     }
 }
 
+// Set the model for the ChatGPT instance.
 void ofxChatGPT::setModel(const string model) {
     modelName = model;
 }
 
-vector<string> ofxChatGPT::getModelList() {
+// Get the list of available models from the API.
+tuple<vector<string>, ofxChatGPT::ErrorCode> ofxChatGPT::getModelList() {
     string url = "https://api.openai.com/v1/models";
     ofHttpRequest request;
     request.url = url;
@@ -70,6 +78,7 @@ vector<string> ofxChatGPT::getModelList() {
     ofURLFileLoader loader;
     ofHttpResponse response = loader.handleRequest(request);
 
+    // Handle the response and parse the model list.
     if (response.status == 200) {
         ofJson result = ofJson::parse(response.data.getText());
         vector<string> modelList;
@@ -79,18 +88,47 @@ vector<string> ofxChatGPT::getModelList() {
         }
 
         ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
-        return modelList;
+        return make_tuple(modelList, Success);
     } else {
-        ofLogError("ofxChatGPT") << "Error: " << response.status;
-        ofLogError("ofxChatGPT") << "Data: " << response.data;
-        return {};
+        auto errorCode = parseErrorResponse(response);
+        ofLogError("ofxChatGPT") << getErrorMessage(errorCode);
+        ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
+        return make_tuple(vector<string>{}, errorCode);
     }
 }
 
+// Get the current conversation history.
 vector<ofJson> ofxChatGPT::getConversation() {
     return conversation;
 }
 
+// Get the error message for a given error code.
+string ofxChatGPT::getErrorMessage(ErrorCode errorCode) {
+    switch (errorCode) {
+        case Success:
+            return "Success";
+        case InvalidAPIKey:
+            return "Invalid API key";
+        case NetworkError:
+            return "Network error";
+        case ServerError:
+            return "Server error";
+        case RateLimitExceeded:
+            return "Rate limit exceeded";
+        case TokenLimitExceeded:
+            return "Token limit exceeded";
+        case InvalidModel:
+            return "Invalid model";
+        case BadRequest:
+            return "Bad request";
+        case Timeout:
+            return "Timeout";
+        default:
+            return "Unknown error";
+    }
+}
+
+// Helper function to send an HTTP request to the specified URL.
 ofHttpResponse ofxChatGPT::sendRequest(const std::string &url, const std::string &body) {
     ofHttpRequest request;
     request.url = url;
@@ -101,4 +139,30 @@ ofHttpResponse ofxChatGPT::sendRequest(const std::string &url, const std::string
 
     ofURLFileLoader loader;
     return loader.handleRequest(request);
+}
+
+// Helper function to parse the error response and return the appropriate error code.
+ofxChatGPT::ErrorCode ofxChatGPT::parseErrorResponse(const ofHttpResponse &response) {
+    int status = response.status;
+    if (status == 401) {
+        return InvalidAPIKey;
+    } else if (status >= 500 && status < 600) {
+        return ServerError;
+    } else if (status == 429) {
+        return RateLimitExceeded;
+    } else if (status == 400) {
+        ofJson errorJson = ofJson::parse(response.data.getText());
+        string errorType = errorJson["error"]["type"].get<std::string>();
+        if (errorType == "model_not_found") {
+            return InvalidModel;
+        } else if (errorType == "too_many_tokens") {
+            return TokenLimitExceeded;
+        } else {
+            return BadRequest;
+        }
+    } else if (status == 408) {
+        return Timeout;
+    } else {
+        return UnknownError;
+    }
 }

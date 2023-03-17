@@ -1,41 +1,40 @@
 #include "ofApp.h"
 
 void ofApp::setup() {
+    // Set up the ChatGPT instance with your API key.
     chatGPT.setup("your-api-key");
-    //ofSetLogLevel(OF_LOG_VERBOSE);
     
-    // モデルを列挙
-    ofLog() << "GPT Model list";
-    for (auto model : chatGPT.getModelList()) {
-        ofLog() << model;
+    // Define a list of user messages for the conversation.
+    vector<string> userMessages = {
+        "Why don't scientists trust atoms?",
+        "What's another funny science joke?"
+    };
+    
+    // Iterate through the user messages and send each message to ChatGPT.
+    for (const auto &userMessage : userMessages) {
+        ofLog() << "User: " << userMessage;
+        string response;
+        ofxChatGPT::ErrorCode errorCode;
+        // Send the message to ChatGPT and receive a response.
+        tie(response, errorCode) = chatGPT.chatWithHistory(userMessage);
+        // Check if the response was successful and log the response.
+        if (errorCode == ofxChatGPT::Success) {
+            ofLog() << "Assistant: " << response;
+        }
     }
-    
-    // チャット開始
-    string userMessage = "Hello, are you ChatGPT?";
-    ofLog() << "User: " << userMessage;
-    string assistantMessage = chatGPT.chatWithHistory(userMessage);
-    ofLog() << "GPT: " << assistantMessage;
-    
-    userMessage = "Can you answer anything?";
-    ofLog() << "User: " << userMessage;
-    assistantMessage = chatGPT.chatWithHistory(userMessage);
-    ofLog() << "GPT: " << assistantMessage;
-    
-    userMessage = "That's amazing, I can answer anything too. can i ask you a question?";
-    ofLog() << "User: " << userMessage;
-    assistantMessage = chatGPT.chatWithHistory(userMessage);
-    ofLog() << "GPT: " << assistantMessage;
 }
 
 void ofApp::update() {
+    // Update logic for the application (currently empty).
 }
 
 void ofApp::draw() {
-    // 会話履歴を画面に表示する
+    // Display the conversation on the screen.
     stringstream conversationText;
+    // Iterate through the conversation messages and build the display text.
     for (const ofJson &message : chatGPT.getConversation()) {
         conversationText << message["role"] << ": " << message["content"] << "\n";
     }
+    // Draw the conversation text on the screen.
     ofDrawBitmapString("conversation:\n" + conversationText.str(), 20, 20);
 }
-
