@@ -5,6 +5,13 @@ void ofxChatGPT::setup(string apiKey) {
     modelName = "gpt-3.5-turbo"; // default model
 }
 
+void ofxChatGPT::setSystem(const string &message) {
+    ofJson json;
+    json["role"] = "system";
+    json["content"] = message;
+    conversation.push_back(json);
+}
+
 // Send a message to ChatGPT and get a response without conversation history.
 tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chat(const string &message) {
     std::string url = "https://api.openai.com/v1/chat/completions";
@@ -48,7 +55,7 @@ tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chatWithHistory(const string &m
     if (response.status == 200) {
         ofJson result = ofJson::parse(response.data.getText());
         string assistantReply = result["choices"][0]["message"]["content"].get<std::string>();
-
+        
         // Add the assistant's reply to the history
         conversation.push_back({{"role", "assistant"}, {"content", assistantReply}});
 

@@ -21,12 +21,15 @@ public:
     // Set up the ChatGPT instance with the API key.
     void setup(string apiKey);
     
+    // Set "system" role message
+    void setSystem(const string &message);
+
     // Send a message to ChatGPT and get a response without conversation history.
     tuple<string, ErrorCode> chat(const string &message);
     
     // Send a message to ChatGPT and get a response with conversation history.
     tuple<string, ErrorCode> chatWithHistory(const string &message);
-    
+        
     // Get the list of available models from the API.
     tuple<vector<string>, ErrorCode> getModelList();
     
