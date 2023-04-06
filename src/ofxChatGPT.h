@@ -40,7 +40,7 @@ public:
     vector<ofJson> getConversation();
     
     // Get the error message for a given error code.
-    string getErrorMessage(ErrorCode errorCode);
+    static string getErrorMessage(ErrorCode errorCode);
 
 private:
     string apiKey;
