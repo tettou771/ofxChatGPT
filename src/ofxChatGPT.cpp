@@ -1,5 +1,12 @@
 #include "ofxChatGPT.h"
 
+const string ofxChatGPT::endpoint = "https://api.openai.com/v1/chat/completions";
+
+ofxChatGPT::ofxChatGPT() {
+    temperature = 0.5;
+    timeoutSec = 60;
+}
+
 void ofxChatGPT::setup(string apiKey) {
     this->apiKey = apiKey;
     modelName = "gpt-3.5-turbo"; // default model
@@ -14,14 +21,13 @@ void ofxChatGPT::setSystem(const string &message) {
 
 // Send a message to ChatGPT and get a response without conversation history.
 tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chat(const string &message) {
-    std::string url = "https://api.openai.com/v1/chat/completions";
     ofJson requestBody;
     requestBody["model"] = modelName;
     requestBody["messages"].push_back({{"role", "user"}, {"content", message}});
     requestBody["temperature"] = 0.5;
     ofLogVerbose("ofxChatGPT") << "SendData: " << requestBody.dump();
 
-    ofHttpResponse response = sendRequest(url, requestBody.dump());
+    ofHttpResponse response = sendRequest(endpoint, requestBody.dump());
 
     // Handle the response from ChatGPT.
     if (response.status == 200) {
@@ -30,6 +36,9 @@ tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chat(const string &message) {
         return make_tuple(result["choices"][0]["message"]["content"].get<std::string>(), Success);
     } else {
         auto errorCode = parseErrorResponse(response);
+        if (response.error == "Timeout was reached") {
+            errorCode = Timeout;
+        }
         ofLogError("ofxChatGPT") << getErrorMessage(errorCode);
         ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
         return make_tuple("", errorCode);
@@ -38,18 +47,17 @@ tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chat(const string &message) {
 
 // Send a message to ChatGPT and get a response with conversation history.
 tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chatWithHistory(const string &message) {
-    std::string url = "https://api.openai.com/v1/chat/completions";
     ofJson requestBody;
     requestBody["model"] = modelName;
 
     // Add the new message to the history
     conversation.push_back({{"role", "user"}, {"content", message}});
     requestBody["messages"] = conversation;
-    requestBody["temperature"] = 0.5;
+    requestBody["temperature"] = temperature;
 
     ofLogVerbose("ofxChatGPT") << "SendData: " << requestBody.dump();
 
-    ofHttpResponse response = sendRequest(url, requestBody.dump());
+    ofHttpResponse response = sendRequest(endpoint, requestBody.dump());
 
     // Handle the response from ChatGPT.
     if (response.status == 200) {
@@ -63,6 +71,52 @@ tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chatWithHistory(const string &m
         return make_tuple(assistantReply, Success);
     } else {
         auto errorCode = parseErrorResponse(response);
+        if (response.error == "Timeout was reached") {
+            errorCode = Timeout;
+        }
+
+        ofLogError("ofxChatGPT") << getErrorMessage(errorCode);
+        ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
+        return make_tuple("", errorCode);
+    }
+}
+
+tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chatRegenerate() {
+    ofJson requestBody;
+    requestBody["model"] = modelName;
+
+    // Remove last assistant message if exists.
+    try {
+        if (!conversation.empty() && conversation.back()["role"] == "assistant") {
+            conversation.erase(conversation.end() - 1);
+        }
+    }
+    catch (exception e) {
+        ofLogError("ofxChatGPT") << "conversation JSON " << e.what();
+    }
+        
+    requestBody["messages"] = conversation;
+    requestBody["temperature"] = temperature;
+
+    ofLogVerbose("ofxChatGPT") << "SendData: " << requestBody.dump();
+
+    ofHttpResponse response = sendRequest(endpoint, requestBody.dump());
+
+    // Handle the response from ChatGPT.
+    if (response.status == 200) {
+        ofJson result = ofJson::parse(response.data.getText());
+        string assistantReply = result["choices"][0]["message"]["content"].get<std::string>();
+        
+        // Add the assistant's reply to the history
+        conversation.push_back({{"role", "assistant"}, {"content", assistantReply}});
+
+        ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
+        return make_tuple(assistantReply, Success);
+    } else {
+        auto errorCode = parseErrorResponse(response);
+        if (response.error == "Timeout was reached") {
+            errorCode = Timeout;
+        }
         ofLogError("ofxChatGPT") << getErrorMessage(errorCode);
         ofLogVerbose("ofxChatGPT") << "Data: " << response.data;
         return make_tuple("", errorCode);
@@ -143,6 +197,7 @@ ofHttpResponse ofxChatGPT::sendRequest(const std::string &url, const std::string
     request.headers["Content-Type"] = "application/json";
     request.headers["Authorization"] = "Bearer " + apiKey;
     request.body = body;
+    request.timeoutSeconds = timeoutSec;
 
     ofURLFileLoader loader;
     return loader.handleRequest(request);
