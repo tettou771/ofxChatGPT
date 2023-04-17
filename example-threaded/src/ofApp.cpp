@@ -81,7 +81,7 @@ void ofApp::draw()
 		conversationText << message["role"] << ": " << message["content"] << "\n";
 	}
 	// Draw the conversation text on the screen.
-	ofDrawBitmapString("conversation:\n" + conversationText.str(), 20, 70);
+	ofDrawBitmapStringHighlight("conversation:\n" + conversationText.str(), 20, 70);
 	 */
 
 	string s = "";
@@ -91,19 +91,19 @@ void ofApp::draw()
 	x = 10;
 	y = 20;
 
-	ofDrawBitmapString("QUESTION: \n", x, y + (i++ * h));
+	ofDrawBitmapStringHighlight("QUESTION: \n", x, y + (i++ * h));
 	s = ofToString(jQuestion["message"]["role"]);
-	ofDrawBitmapString(s, x, y + (i++ * h));
+	ofDrawBitmapStringHighlight(s, x, y + (i++ * h));
 	s = ofToString(jQuestion["message"]["content"]);
-	ofDrawBitmapString(s, x, y + (i++ * h));
+	ofDrawBitmapStringHighlight(s, x, y + (i++ * h));
 
 	i = 0;
 	y = ofGetHeight() / 2;
-	ofDrawBitmapString("RESPONSE: \n", x, y + (i++ * h));
+	ofDrawBitmapStringHighlight("RESPONSE: \n", x, y + (i++ * h));
 	s = ofToString(jResponse["message"]["role"]);
-	ofDrawBitmapString(s, x, y + (i++ * h));
+	ofDrawBitmapStringHighlight(s, x, y + (i++ * h));
 	s = ofToString(jResponse["message"]["content"]);
-	ofDrawBitmapString(s, x, y + (i++ * h));
+	ofDrawBitmapStringHighlight(s, x, y + (i++ * h));
 
 	s = "";
 	s += "Press 1-9 to ask for a MUSIC BAND.\n";
@@ -124,7 +124,7 @@ void ofApp::draw()
 	auto bb = f.getBoundingBox(s, 0, 0);
 	y = 20;
 	x = ofGetWidth() / 2 - bb.getWidth() / 2;
-	ofDrawBitmapString(s, x, y);
+	ofDrawBitmapStringHighlight(s, x, y);
 }
 
 void ofApp::keyPressed(ofKeyEventArgs& key) {
