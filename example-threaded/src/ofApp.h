@@ -5,24 +5,28 @@
 class ofApp : public ofBaseApp {
 public:
 	void setup();
+	void exit();
 	void update();
 	void draw();
 	void keyPressed(ofKeyEventArgs& key);
 
 	void sendMessage(string message);
+	void regenerate();
 
-	//void regenerate();
+	string apiKey;
 
 	ChatThread chat;
 
 	ofJson jQuestion;
 	ofJson jResponse;
 
-	string prompt;
+	bool bError = false;
+
+	string strPrompt;
 	int iPrompt = 0;
 	string namePrompt;
 
-	bool bError = false;
+	vector<pair<string, string> > prompts;
 
 	static string GPT_Prompt_0() {
 		return R"(
@@ -53,4 +57,8 @@ You will only reply that band names list, and nothing else.
 But you must sort that bands, from older to newer. 
 )";
 	}
+
+	void setPrompt(int index);
+
+	string strBandname;
 };
