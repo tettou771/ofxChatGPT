@@ -1,18 +1,14 @@
 #include "ofApp.h"
 
-void ofApp::exit() {
-	ofSetLogLevel(OF_LOG_VERBOSE);
-
-	ofJson configJson;
-	configJson["apiKey"] = apiKey;
-	ofSavePrettyJson("config.json", configJson);
-}
-
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 
-	ofJson configJson = ofLoadJson("config.json");
-	apiKey = configJson["apiKey"].get<string>();//will fail if file do not exist
+	ofFile f;
+	if (f.doesFileExist("config.json")) {
+		ofJson configJson = ofLoadJson("config.json");
+		apiKey = configJson["apiKey"].get<string>();//will fail if file do not exist
+	}
+	else apiKey = "your-api-key";
 
 	ofxChatGPT chappy;
 	chappy.setup(apiKey);
@@ -44,7 +40,7 @@ void ofApp::setup() {
 void ofApp::setPrompt(int index)
 {
 	if (index > prompts.size() - 1) {
-		ofLogError("ofApp") << "Index " << index << "out of range";
+		ofLogError("ofApp") << "Index #" << index << " out of range";
 		return;
 	}
 
@@ -89,7 +85,8 @@ void ofApp::update() {
 
 void ofApp::draw()
 {
-	// Bg: Blue when waiting. red if error. 
+	// Clear Bg: 
+	// Blue when waiting. Red if error. 
 	ofColor c;
 	float v = glm::cos(10 * ofGetElapsedTimef());
 	float a1 = ofMap(v, -1, 1, 100, 200, true);
@@ -173,11 +170,6 @@ void ofApp::keyPressed(ofKeyEventArgs& key) {
 		else if (iPrompt == 1) iPrompt = 2;
 		else if (iPrompt == 2) iPrompt = 0;
 		setPrompt(iPrompt);
-
-		//workflow: 
-		//avoid bc overflows
-		//send last band name again
-		//sendMessage(strBandname);
 	}
 
 	if (key.key == OF_KEY_RETURN) {//regenerate
@@ -207,4 +199,12 @@ void ofApp::regenerate() {
 	ofLogNotice("ofApp") << "Regenerate";
 
 	chat.regenerateAsync();
+}
+
+void ofApp::exit() {
+	ofSetLogLevel(OF_LOG_VERBOSE);
+
+	ofJson configJson;
+	configJson["apiKey"] = apiKey;
+	ofSavePrettyJson("config.json", configJson);
 }
