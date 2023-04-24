@@ -55,6 +55,8 @@ public:
     // Set timeout seconds
     void setTimeoutSec(float t) {timeoutSec = t;}
     float getTimeoutSec() {return timeoutSec;}
+    
+    void eraseConversation(int beginIndex, int endIndex);
 
 private:
     string apiKey;
