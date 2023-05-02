@@ -189,6 +189,26 @@ string ofxChatGPT::getErrorMessage(ErrorCode errorCode) {
     }
 }
 
+void ofxChatGPT::eraseConversation(int beginIndex, int endIndex) {
+    if (conversation.empty()) return;
+    
+    if (beginIndex == endIndex) return;
+    
+    int begin, end;
+    if (beginIndex <= endIndex) {
+        begin = MAX(beginIndex, 0);
+        end = MIN(endIndex, (int)conversation.size());
+    }else{
+        end = MAX(beginIndex, 0);
+        begin = MIN(endIndex, (int)conversation.size());
+    }
+    
+    int n = end - begin;
+    for (int i=0; i<n; ++i) {
+        conversation.erase(conversation.begin() + begin);
+    }
+}
+
 // Helper function to send an HTTP request to the specified URL.
 ofHttpResponse ofxChatGPT::sendRequest(const std::string &url, const std::string &body) {
     ofHttpRequest request;
