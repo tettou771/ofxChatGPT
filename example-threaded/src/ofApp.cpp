@@ -16,6 +16,21 @@ void ofApp::setup() {
 	ofxChatGPT::ErrorCode err;
 	tie(models, err) = chappy.getModelList();
 	ofLogNotice("ofApp") << "Available OpenAI GPT models:";
+	
+	if (err == ofxChatGPT::Success)
+	{
+		strError = "";
+		bError = false;
+	}
+	else
+	{
+		ofLogError("ofApp") << "ofxChatGPT has an error. " << ofxChatGPT::getErrorMessage(err);
+		string message = "Error: " + ofxChatGPT::getErrorMessage(err);
+
+		strError = message;
+		bError = true;
+	}
+
 
 	for (auto model : models) {
 		if (ofIsStringInString(model, "gpt")) {
