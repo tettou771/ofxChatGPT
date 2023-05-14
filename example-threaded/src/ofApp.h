@@ -61,4 +61,5 @@ But you must sort that bands, from older to newer.
 	void setPrompt(int index);
 
 	string strBandname;
+	string strError = "";
 };

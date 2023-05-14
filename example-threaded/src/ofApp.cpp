@@ -71,6 +71,7 @@ void ofApp::update() {
 
 			jResponse = newGPTMsg;
 
+			strError = "";
 			bError = false;
 		}
 		else
@@ -78,6 +79,7 @@ void ofApp::update() {
 			ofLogError("ofApp") << "ofxChatGPT has an error. " << ofxChatGPT::getErrorMessage(errorCode);
 			string message = "Error: " + ofxChatGPT::getErrorMessage(errorCode);
 
+			strError = message;
 			bError = true;
 		}
 	}
@@ -146,10 +148,22 @@ void ofApp::draw()
 	s += "Press ENTER to regenerate.";
 
 	static ofBitmapFont f;
-	auto bb = f.getBoundingBox(s, 0, 0);
-	y = 20;
-	x = ofGetWidth() / 2 - bb.getWidth() / 2;
-	ofDrawBitmapStringHighlight(s, x, y);
+
+	{
+		auto bb = f.getBoundingBox(s, 0, 0);
+		y = 20;
+		x = ofGetWidth() / 2 - bb.getWidth() / 2;
+		ofDrawBitmapStringHighlight(s, x, y);
+	}
+
+	if (strError != "")
+	{
+		s = strError;
+		auto bb = f.getBoundingBox(s, 0, 0);
+		x = ofGetWidth() / 2 - bb.getWidth() / 2;
+		y = ofGetHeight() / 2 - bb.getHeight() / 2;
+		ofDrawBitmapStringHighlight(s, x, y, ofColor::red, ofColor::black);
+	}
 }
 
 void ofApp::keyPressed(ofKeyEventArgs& key) {
