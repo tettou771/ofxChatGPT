@@ -19,6 +19,20 @@ void ofxChatGPT::setSystem(const string &message) {
     conversation.push_back(json);
 }
 
+void ofxChatGPT::removeSystem() {
+    for (int i=0; i<conversation.size(); ++i) {
+        try {
+            if (conversation[i]["role"] == "system") {
+                conversation.erase(conversation.begin() + i);
+                --i;
+            }
+        }
+        catch (exception e) {
+            ofLogWarning("ofxChatGPT") << "removeSystem exception: " << e.what();
+        }
+    }
+}
+
 // Send a message to ChatGPT and get a response without conversation history.
 tuple<string, ofxChatGPT::ErrorCode> ofxChatGPT::chat(const string &message) {
     ofJson requestBody;
@@ -207,6 +221,21 @@ void ofxChatGPT::eraseConversation(int beginIndex, int endIndex) {
     for (int i=0; i<n; ++i) {
         conversation.erase(conversation.begin() + begin);
     }
+}
+
+void ofxChatGPT::eraseAllConversationsWithoutSystem() {
+    for (int i=0; i<conversation.size(); ++i) {
+        try {
+            if (conversation[i]["role"] != "system") {
+                conversation.erase(conversation.begin() + i);
+                --i;
+            }
+        }
+        catch (exception e) {
+            ofLogWarning("ofxChatGPT") << "No role conversation";
+        }
+    }
+     ofLogNotice("ofxChatGPT") << "eraseAllConversationsWithoutSystem()";
 }
 
 // Helper function to send an HTTP request to the specified URL.

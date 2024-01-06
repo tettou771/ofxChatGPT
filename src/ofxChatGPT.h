@@ -25,6 +25,9 @@ public:
     
     // Set "system" role message
     void setSystem(const string &message);
+    
+    // remove "system" role messages
+    void removeSystem();
 
     // Send a message to ChatGPT and get a response without conversation history.
     tuple<string, ErrorCode> chat(const string &message);
@@ -57,6 +60,7 @@ public:
     float getTimeoutSec() {return timeoutSec;}
     
     void eraseConversation(int beginIndex, int endIndex);
+    void eraseAllConversationsWithoutSystem();
 
 private:
     string apiKey;
